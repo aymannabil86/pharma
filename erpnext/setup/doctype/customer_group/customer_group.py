@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
+from frappe.utils import cstr
 
 
 from frappe.utils.nestedset import NestedSet
@@ -25,3 +26,17 @@ def get_parent_customer_groups(customer_group):
 	return frappe.db.sql("""select name from `tabCustomer Group`
 		where lft <= %s and rgt >= %s
 		order by lft asc""", (lft, rgt), as_dict=True)
+def check_preventive_list(parentgroup, items, acceptance):
+        m = []
+	previtem = frappe.db.sql("""select item_code from `tabPreventive Item List`
+		    where customer_group = %s""", (parentgroup))
+		
+	for d in items:
+    	    for i in previtem:
+    				
+    				if d == i[0]:
+    						m.append(d)
+     
+        if not acceptance:
+            frappe.throw(_("The Following Items {0} Is prevented For The Customer, Please Inset Item Acceptance Code").format(m))
+
