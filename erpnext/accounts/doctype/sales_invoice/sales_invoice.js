@@ -17,7 +17,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 	onload: function() {
 		var me = this;
 		this._super();
-
+        
 		if(!this.frm.doc.__islocal && !this.frm.doc.customer && this.frm.doc.debit_to) {
 			// show debit_to in print format
 			this.frm.set_df_property("debit_to", "print_hide", 0);
@@ -103,8 +103,36 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 		this.set_default_print_format();
 	},
 
+//	before_submit: function(doc, dt, dn) {
+//		var me = this;
+
+//		frappe.call({
+//			method: "erpnext.accounts.doctype.sales_invoice.sales_invoice.check_invoice_limit",
+//			args: {
+//				inv_total: this.frm.doc.grand_total,
+//				customer: this.frm.doc.customer,
+//		    },
+//			callback: function (r) {
+//				if (r.message.acceptance == "Invoice Limit Has Been Passed") {
+//					invoice_limit = r.message.invoice_limit;
+//					total = r.message.total;
+//					cust = r.message.cust;
+//                    frappe.call({
+//						method: "erpnext.accounts.doctype.sales_invoice.sales_invoice.breaker"
+//					})			
+//					acceptance = r.message.acceptance;
+//					frappe.confirm(acceptance)
+//					window.confirm(invoice_limit)
+//					window.confirm(total)
+//					window.confirm(cust)
+//				}
+//			}
+//		})
+
+//	},
+
 	on_submit: function(doc, dt, dn) {
-		var me = this;
+
 
 		if (frappe.get_route()[0] != 'Form') {
 			return
