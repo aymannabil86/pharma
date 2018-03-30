@@ -161,8 +161,12 @@ def get_invoices(filters, additional_query_columns):
 
 	conditions = get_conditions(filters)
 	return frappe.db.sql("""
-		select name, posting_date, debit_to, project, customer, 
+		select name, posting_date, debit_to, project, customer,
+<<<<<<< HEAD
 		customer_name, owner, remarks, territory, tax_id, customer_group,
+=======
+		customer_name, owner, remarks, territory, customer_group,
+>>>>>>> d9670f65aa173c6369f5f6a5dd2c2461e62002bb
 		base_net_total, base_grand_total, base_rounded_total, outstanding_amount {0}
 		from `tabSales Invoice`
 		where docstatus = 1 %s order by posting_date desc, name desc""".format(additional_query_columns or '') %
