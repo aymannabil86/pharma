@@ -5,6 +5,7 @@
 cur_frm.pformat.print_heading = 'Invoice';
 
 {% include 'erpnext/selling/sales_common.js' %};
+var bars = [];
 
 cur_frm.add_fetch('customer', 'tax_id', 'tax_id');
 
@@ -102,6 +103,53 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 
 		this.set_default_print_format();
 	},
+    
+	scan: function(doc) {
+		var me = this;
+		var changed = false;
+		for (var i=0, l=(this.frm.doc.items || []).length; i<l; i++){
+			var row = this.frm.doc.items[i];
+			if (row.barcode == null) {
+				frappe.model.set_value(row.doctype, row.name, "barcode", doc.scan, "Link");
+				changed = true;
+				bars.push(row.barcode);
+			}else if (row.barcode == doc.scan){
+				quant = row.qty+1;
+				frappe.model.set_value(row.doctype, row.name, "qty", quant, "data");
+				changed = true;
+			}else if (!(bars.includes(doc.scan))){
+				cur_frm.add_child("items");
+				var row = this.frm.doc.items[l];
+				frappe.model.set_value(row.doctype, row.name, "barcode", doc.scan, "Link");
+				changed = true;
+				bars.push(row.barcode);
+         	}
+		}
+
+	//	this.set_barcode_if_different("barcode", doc.scan, function(row) {
+	//		return me.scan;
+	//	});
+		doc.scan = "";
+		refresh_field("scan");
+	},
+//	set_barcode_if_different: function(fieldname, value, condition) {
+//		var changed = false;
+//		for (var i=0, l=(this.frm.doc.items || []).length; i<l; i++) {
+//			var row = this.frm.doc.items[i];
+//			if (row[fieldname] != value) {
+//				if (condition && !condition(row)) {
+//					continue;
+  //                  
+	//			}
+	//			
+	//			cur_frm.add_child("items");
+	//			frappe.model.set_value(row.doctype, row.name, fieldname, value, "Link");
+	//			changed = true;
+	//		}
+	//	}
+	//	refresh_field("items");
+	//},
+
 
 //	before_submit: function(doc, dt, dn) {
 //		var me = this;
