@@ -17,7 +17,7 @@ frappe.ui.form.on('Barcode Printer', {
                 frm.refresh_field("barcode_printer_items");
             });
         });
-		
+
     },
 	purchase_receipt: function(frm) {
         frm.doc.purchase_invoice = ""
@@ -34,6 +34,6 @@ frappe.ui.form.on('Barcode Printer', {
                 frm.refresh_field("barcode_printer_items");
             });
         });
-		
+
 	}    
 });
