@@ -6,6 +6,13 @@ cur_frm.pformat.print_heading = 'Invoice';
 
 {% include 'erpnext/selling/sales_common.js' %};
 var bars = [];
+var batches = [];
+var bari = "";
+var barb = "";
+var barsup = "";
+var bar = "";
+var nbar = "";
+var nbatch = "";
 
 cur_frm.add_fetch('customer', 'tax_id', 'tax_id');
 
@@ -107,24 +114,64 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 	scan: function(doc) {
 		var me = this;
 		var changed = false;
-		for (var i=0, l=(this.frm.doc.items || []).length; i<l; i++){
-			var row = this.frm.doc.items[i];
-			if (row.barcode == null) {
-				frappe.model.set_value(row.doctype, row.name, "barcode", doc.scan, "Link");
-				changed = true;
-				bars.push(row.barcode);
-			}else if (row.barcode == doc.scan){
-				quant = row.qty+1;
-				frappe.model.set_value(row.doctype, row.name, "qty", quant, "data");
-				changed = true;
-			}else if (!(bars.includes(doc.scan))){
-				cur_frm.add_child("items");
-				var row = this.frm.doc.items[l];
-				frappe.model.set_value(row.doctype, row.name, "barcode", doc.scan, "Link");
-				changed = true;
-				bars.push(row.barcode);
-         	}
-		}
+		bar = String(doc.scan);
+//		bari = bar.substring(0, 6);
+//		barb = bar.substring(7, 13);
+		nbar = bar.split("-");
+		bari = nbar[0];
+//		barb = nbar[1];
+//		frappe.throw(__(nbar));
+//		frappe.throw(__(barb));
+
+//		for (var i=0, l=(this.frm.doc.items || []).length; i<l; i++){
+//			var row = this.frm.doc.items[i];
+//			if (row.barcode == null) {
+//				frappe.model.set_value(row.doctype, row.name, "barcode", doc.scan, "Link");
+//				changed = true;
+//				bars.push(row.barcode);
+//			}else if (row.barcode == doc.scan){
+//				quant = row.qty+1;
+//				frappe.model.set_value(row.doctype, row.name, "qty", quant, "data");
+//				changed = true;
+//			}else if (!(bars.includes(doc.scan))){
+//				cur_frm.add_child("items");
+//				var row = this.frm.doc.items[l];
+//				frappe.model.set_value(row.doctype, row.name, "barcode", doc.scan, "Link");
+//				changed = true;
+//				bars.push(row.barcode);
+  //       	}
+	//	}
+
+	for (var i=0, l=(this.frm.doc.items || []).length; i<l; i++){
+		var row = this.frm.doc.items[i];
+		if (row.barcode == null) {
+			frappe.model.set_value(row.doctype, row.name, "barcode", bari, "Link");
+//			frappe.model.set_value(row.doctype, row.name, "batch_no", barb, "Link");
+			changed = true;
+			bars.push(row.barcode);
+//			batches.push(row.batch_no);
+		}else if (row.barcode == bari ){
+			quant = row.qty+1;
+			frappe.model.set_value(row.doctype, row.name, "qty", quant, "data");
+			changed = true;
+//		}else if (row.barcode == bari && !(batches.includes(barb))){
+//			cur_frm.add_child("items");
+//			var row = this.frm.doc.items[l];
+//			frappe.model.set_value(row.doctype, row.name, "barcode", bari, "Link");
+//			frappe.model.set_value(row.doctype, row.name, "batch_no", barb, "Link");
+//			changed = true;
+//			batches.push(row.batch_no);
+		}else if (!(bars.includes(bari))){
+			cur_frm.add_child("items");
+			var row = this.frm.doc.items[l];
+			frappe.model.set_value(row.doctype, row.name, "barcode", bari, "Link");
+//			frappe.model.set_value(row.doctype, row.name, "batch_no", barb, "Link");
+			changed = true;
+			bars.push(row.barcode);
+//			batches.push(row.batch_no);
+		 }
+	}
+
 
 	//	this.set_barcode_if_different("barcode", doc.scan, function(row) {
 	//		return me.scan;
@@ -292,6 +339,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 
 	customer: function() {
 		var me = this;
+		this.check_cust_allow();
 		if(this.frm.updating_party_details) return;
 
 		erpnext.utils.get_party_details(this.frm,
@@ -304,6 +352,32 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 			}, function() {
 				me.apply_pricing_rule();
 			})
+
+		
+	},
+
+	prescription_date:function(){
+		this.check_pres_allow();
+	},
+
+	check_cust_allow: function(){
+		var me = this;
+		var custdiff = String(frappe.datetime.get_day_diff(this.frm.doc.valid_throw, this.frm.doc.posting_date));
+		if (!this.frm.doc.cust_acceptance){
+			if (parseInt(custdiff) < parseInt(this.frm.doc.cust_days)){
+				frappe.throw(__("This Customer Validation Period Less Than The Allowed Days And Can Not Creat Any Invoices, Please Insert Customer Acceptance Code"));
+			}
+		}		
+	},
+
+	check_pres_allow: function(){
+		var me = this;
+		var presdiff = String(frappe.datetime.get_day_diff(this.frm.doc.posting_date, this.frm.doc.prescription_date));
+		if (!this.frm.doc.pres_acceptance){
+			if (parseInt(presdiff) > parseInt(this.frm.doc.pres_days) || parseInt(presdiff) < 0){
+				frappe.throw(__("This Prescription Validation Period Less Than The Allowed Days And Can Not Creat Any Invoices, Please Insert Prescription Acceptance Code"));
+			}	
+		}
 	},
 
 	debit_to: function() {

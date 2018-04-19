@@ -194,7 +194,10 @@ def get_data():
                                         "type": "doctype",
                                         "name": "Barcode Printer",
                                 },
-
+                                {
+                                        "type": "doctype",
+                                        "name": "Diagnosis Table",
+                                },
 				{
 					"type": "doctype",
 					"name": "Brand",

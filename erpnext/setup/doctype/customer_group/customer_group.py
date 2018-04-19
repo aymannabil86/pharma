@@ -35,8 +35,21 @@ def check_preventive_list(parentgroup, items, acceptance):
     	    for i in previtem:
     				
     				if d == i[0]:
-    						m.append(d)
-     
-        if not acceptance:
+    					m.append(d)
+        if not acceptance and m:
             frappe.throw(_("The Following Items {0} Is prevented For The Customer, Please Inset Item Acceptance Code").format(m))
 
+     
+
+def check_diagn_list(parentgroup, diagn, acceptance):
+        d = ""
+	prevdiagn = frappe.db.sql("""select prev_diagn from `tabPreventive Diagnosis List`
+		    where customer_group = %s""", (parentgroup))
+		
+	for i in prevdiagn:
+    	    if diagn == i[0]:
+    		    d = diagn
+                    if not acceptance:
+                            frappe.throw(_("The Following Diagnosis {0} Is prevented For The Customer, Please Insert Diagnosis Acceptance Code").format(d))
+
+     
