@@ -293,6 +293,7 @@ class SalesInvoice(SellingController):
 	def on_update(self):
 		self.set_paid_amount()
 		self.check_preventive_list()
+		self.check_diagn_list()
 
 	def set_paid_amount(self):
     		
@@ -335,7 +336,14 @@ class SalesInvoice(SellingController):
 		check_preventive_list(parentgroup, items, acceptance)
 
 
-    		
+	def check_diagn_list(self):
+    		from erpnext.setup.doctype.customer_group.customer_group import check_diagn_list
+    			
+       		diagn = self.pres_diagn
+	    	parentgroup = frappe.db.get_value("Customer", self.customer, "parent_customer_group")
+		acceptance = self.diagn_acceptance
+		check_diagn_list(parentgroup, diagn, acceptance)
+
 
 	def validate_time_sheets_are_submitted(self):
 		for data in self.timesheets:

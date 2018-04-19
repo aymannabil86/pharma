@@ -104,6 +104,7 @@ def split_batch(batch_no, item_code, warehouse, qty, new_batch_id = None):
 	return batch.name
 
 def set_batch_nos(doc, warehouse_field, throw = False):
+    	
 	'''Automatically select `batch_no` for outgoing items in item table'''
 	for d in doc.items:
 		qty = d.get('stock_qty') or d.get('transfer_qty') or d.get('qty') or 0
