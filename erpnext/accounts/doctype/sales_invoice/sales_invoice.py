@@ -103,28 +103,20 @@ class SalesInvoice(SellingController):
 		self.set_status()
 		if self.is_pos and not self.is_return:
 			self.verify_payment_amount_is_positive()
+
+#		self.set_paid_amount()
+		self.check_preventive_list()
+		self.check_diagn_list()
+		self.check_inv_limit()
+
 	
 	def before_save(self):
     		set_account_for_mode_of_payment(self)
-#		self.check_preventive_list()
 
     		
 
 	def on_submit(self):
 		self.validate_pos_paid_amount()
-#		invoice_limit = cint(frappe.db.get_value("Customer", self.customer,"invoice_limit"))
-#		if invoice_limit < self.grand_total and not self.acceptance_code:
- #   			frappe.throw(_("You Passe The Limit Please Insert Your Acceptance Code"))
-
-
-#		total = flt(self.grand_total)
-#		percent = cint(frappe.db.get_value("Customer", self.customer,"customer_percentage"))
-#		payment = flt((total * percent)/100)
-#		if percent > 0:
- #   			for d in self.get("payments"):
-  #  					if d.mode_of_payment:
-  #  							frappe.throw(_(payment))
-  #  							frappe.db.set_value("Sales Invoice Payment", d.mode_of_payment, "amount", payment)
 
 
 		if not self.subscription:
@@ -173,6 +165,7 @@ class SalesInvoice(SellingController):
 
 	def on_cancel(self):
 		self.check_close_sales_order("sales_order")
+		self.cust_percent_applied = 0
 
 		from erpnext.accounts.utils import unlink_ref_doc_from_payment_entries
 		if frappe.db.get_single_value('Accounts Settings', 'unlink_payment_on_cancellation_of_invoice'):
@@ -290,38 +283,48 @@ class SalesInvoice(SellingController):
 				(not sales_invoice and data.sales_invoice == self.name):
 				data.sales_invoice = sales_invoice
 
+	
+
 	def on_update(self):
 		self.set_paid_amount()
-		self.check_preventive_list()
-		self.check_diagn_list()
 
 	def set_paid_amount(self):
-    		
-		invoice_limit = cint(frappe.db.get_value("Customer", self.customer,"invoice_limit"))
-		total = flt(self.grand_total)
+    		paid_amount = 0.0
+		base_paid_amount = 0.0
 		percent = cint(frappe.db.get_value("Customer", self.customer,"customer_percentage"))
-		payment = flt((total * percent)/100)
-		if invoice_limit < self.grand_total and not self.acceptance_code and invoice_limit > 0:
-    			frappe.throw(_("You Passe The Limit Please Insert Your Acceptance Code"))
+		before_discount = cint(frappe.db.get_value("Customer", self.customer,"cust_percent_before_discount"))
+		perc_applied = self.cust_percent_applied
 
-		if percent > 0:
-#    		    base_paid_amount = 0.0
-    		    for data in self.payments:
-   				    if data.mode_of_payment:
- #   				    	pay = cstr(d.amount)
-#    				    	frappe.throw(_(pay))
-    				    	frappe.db.set_value("Sales Invoice Payment", data.name, "amount", payment)    					
-    				    	frappe.db.set_value("Sales Invoice Payment", data.name, "base_amount", payment)    					
+		if cint(percent) > 0 and cint(before_discount) == 0 and cint(perc_applied) == 0:
+    			for data in self.payments:
+    					data.base_amount = flt((flt(data.amount*self.conversion_rate, self.precision("base_paid_amount"))*percent)/100)
+					data.amount = flt((data.amount * percent)/100)
+					paid_amount += data.amount
+					base_paid_amount += data.base_amount
 
-#        	paid_amount = 0.0
-             
- # 		for data in self.payments:
-#    					data.base_amount = flt(payment*self.conversion_rate, self.precision("base_paid_amount"))
-	#				paid_amount += data.amount
-#					base_paid_amount += data.base_amount
-	
-		    self.paid_amount = payment
-                self.base_paid_amount = flt(payment*self.conversion_rate, self.precision("base_paid_amount"))
+			self.paid_amount = paid_amount
+			self.base_paid_amount = base_paid_amount
+			self.cust_percent_applied = 1
+		elif cint(percent) > 0 and cint(before_discount) == 1 and cint(perc_applied) == 0:
+    			for data in self.payments:
+    					data.base_amount = flt((flt(self.total_before_discount*self.conversion_rate, self.precision("base_paid_amount"))*percent)/100)
+					data.amount = flt((self.total_before_discount * percent)/100)
+					paid_amount += data.amount
+					base_paid_amount += data.base_amount
+
+			self.paid_amount = paid_amount
+			self.base_paid_amount = base_paid_amount
+			self.cust_percent_applied = 1
+		else:
+        		for data in self.payments:
+            			data.base_amount = flt(data.amount*self.conversion_rate, self.precision("base_paid_amount"))
+        			paid_amount += data.amount
+        			base_paid_amount += data.base_amount
+
+    		self.paid_amount = paid_amount
+    		self.base_paid_amount = base_paid_amount   			
+		
+    					
 
 	def check_preventive_list(self):
     		from erpnext.setup.doctype.customer_group.customer_group import check_preventive_list
@@ -329,7 +332,6 @@ class SalesInvoice(SellingController):
        		items = []
 		for item in self.get("items"):
     				items.append(item.item_code)
-#				frappe.throw(_(items))
 
 	    	parentgroup = frappe.db.get_value("Customer", self.customer, "parent_customer_group")
 		acceptance = self.items_acceptance_code
@@ -343,7 +345,17 @@ class SalesInvoice(SellingController):
 	    	parentgroup = frappe.db.get_value("Customer", self.customer, "parent_customer_group")
 		acceptance = self.diagn_acceptance
 		check_diagn_list(parentgroup, diagn, acceptance)
+    
+	def check_inv_limit(self):
+    		invoice_limit = cint(frappe.db.get_value("Customer", self.customer,"invoice_limit"))
+		after_percent = cint(frappe.db.get_value("Customer", self.customer,"inv_limit_after_percent"))
+		if invoice_limit < self.grand_total and not self.acceptance_code and invoice_limit > 0 and after_percent == 0:
+        		frappe.throw(_("You Passe The Limit Please Insert Your Amount Acceptance Code"))
+		elif invoice_limit < self.outstanding_amount and not self.acceptance_code and invoice_limit > 0 and after_percent == 1:
+    			frappe.throw(_("You Passe The Limit Please Insert Your Amount Acceptance Code"))
 
+
+    		
 
 	def validate_time_sheets_are_submitted(self):
 		for data in self.timesheets:
@@ -1049,16 +1061,3 @@ def set_account_for_mode_of_payment(self):
 		if not data.account:
 			data.account = get_bank_cash_account(data.mode_of_payment, self.company).get("account")
 
-#@frappe.whitelist()
-#def check_invoice_limit(inv_total, customer):
-#    invoice_limit = cint(frappe.db.get_value("Customer", customer,"invoice_limit"))
-#    if invoice_limit > 0 and invoice_limit < cint(inv_total) :
-#           acceptance = "Invoice Limit Has Been Passed"
-#    else :
-#        	acceptance = "Accepted"	
-#    return {
-#		'invoice_limit': invoice_limit,
-#		'total': inv_total,
-#		'cust': customer,
-#     	'acceptance': acceptance
-#    }
