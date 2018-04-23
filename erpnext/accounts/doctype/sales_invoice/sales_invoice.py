@@ -109,11 +109,11 @@ class SalesInvoice(SellingController):
 		self.check_diagn_list()
 		self.check_inv_limit()
 
-	
+
 	def before_save(self):
     		set_account_for_mode_of_payment(self)
 
-    		
+
 
 	def on_submit(self):
 		self.validate_pos_paid_amount()
@@ -283,7 +283,7 @@ class SalesInvoice(SellingController):
 				(not sales_invoice and data.sales_invoice == self.name):
 				data.sales_invoice = sales_invoice
 
-	
+
 
 	def on_update(self):
 		self.set_paid_amount()
@@ -322,13 +322,13 @@ class SalesInvoice(SellingController):
         			base_paid_amount += data.base_amount
 
     		self.paid_amount = paid_amount
-    		self.base_paid_amount = base_paid_amount   			
-		
-    					
+    		self.base_paid_amount = base_paid_amount
+
+
 
 	def check_preventive_list(self):
     		from erpnext.setup.doctype.customer_group.customer_group import check_preventive_list
-    			
+
        		items = []
 		for item in self.get("items"):
     				items.append(item.item_code)
@@ -340,12 +340,12 @@ class SalesInvoice(SellingController):
 
 	def check_diagn_list(self):
     		from erpnext.setup.doctype.customer_group.customer_group import check_diagn_list
-    			
+
        		diagn = self.pres_diagn
 	    	parentgroup = frappe.db.get_value("Customer", self.customer, "parent_customer_group")
 		acceptance = self.diagn_acceptance
 		check_diagn_list(parentgroup, diagn, acceptance)
-    
+
 	def check_inv_limit(self):
     		invoice_limit = cint(frappe.db.get_value("Customer", self.customer,"invoice_limit"))
 		after_percent = cint(frappe.db.get_value("Customer", self.customer,"inv_limit_after_percent"))
@@ -355,7 +355,7 @@ class SalesInvoice(SellingController):
     			frappe.throw(_("You Passe The Limit Please Insert Your Amount Acceptance Code"))
 
 
-    		
+
 
 	def validate_time_sheets_are_submitted(self):
 		for data in self.timesheets:
@@ -1060,4 +1060,3 @@ def set_account_for_mode_of_payment(self):
 	for data in self.payments:
 		if not data.account:
 			data.account = get_bank_cash_account(data.mode_of_payment, self.company).get("account")
-

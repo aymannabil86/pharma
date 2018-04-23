@@ -25,7 +25,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 	onload: function() {
 		var me = this;
 		this._super();
-        
+
 		if(!this.frm.doc.__islocal && !this.frm.doc.customer && this.frm.doc.debit_to) {
 			// show debit_to in print format
 			this.frm.set_df_property("debit_to", "print_hide", 0);
@@ -110,7 +110,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 
 		this.set_default_print_format();
 	},
-    
+
 	scan: function(doc) {
 		var me = this;
 		var changed = false;
@@ -158,7 +158,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 			this.frm.doc.total_before_discount = tbdisc;
 		}
 	},
-	
+
 	on_submit: function(doc, dt, dn) {
 
 
@@ -287,7 +287,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 				me.apply_pricing_rule();
 			})
 
-		
+
 	},
 
 	prescription_date:function(){
@@ -301,7 +301,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 			if (parseInt(custdiff) < parseInt(this.frm.doc.cust_days)){
 				frappe.throw(__("This Customer Validation Period Less Than The Allowed Days And Can Not Creat Any Invoices, Please Insert Customer Acceptance Code"));
 			}
-		}		
+		}
 	},
 
 	check_pres_allow: function(){
@@ -310,7 +310,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 		if (!this.frm.doc.pres_acceptance){
 			if (parseInt(presdiff) > parseInt(this.frm.doc.pres_days) || parseInt(presdiff) < 0){
 				frappe.throw(__("This Prescription Validation Period Less Than The Allowed Days And Can Not Creat Any Invoices, Please Insert Prescription Acceptance Code"));
-			}	
+			}
 		}
 	},
 
@@ -716,4 +716,3 @@ var calculate_total_billing_amount =  function(frm) {
 
 	refresh_field('total_billing_amount')
 }
-
