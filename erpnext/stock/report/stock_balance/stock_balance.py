@@ -158,15 +158,15 @@ def get_item_warehouse_map(filters, sle):
 		qty_dict.val_rate = d.valuation_rate
 		qty_dict.bal_qty += qty_diff
 		qty_dict.bal_val += value_diff
-		
+
 	iwb_map = filter_items_with_no_transactions(iwb_map)
 
 	return iwb_map
-	
+
 def filter_items_with_no_transactions(iwb_map):
 	for (company, item, warehouse) in sorted(iwb_map):
 		qty_dict = iwb_map[(company, item, warehouse)]
-		
+
 		no_transactions = True
 		float_precision = cint(frappe.db.get_default("float_precision")) or 3
 		for key, val in qty_dict.items():
@@ -174,7 +174,7 @@ def filter_items_with_no_transactions(iwb_map):
 			qty_dict[key] = val
 			if key != "val_rate" and val:
 				no_transactions = False
-		
+
 		if no_transactions:
 			iwb_map.pop((company, item, warehouse))
 
@@ -201,12 +201,13 @@ def get_item_details(items, sle, filters):
 	if not items:
 		items = list(set([d.item_code for d in sle]))
 
-	for item in frappe.db.sql("""
-		select name, item_name, description, item_group, brand, stock_uom
-		from `tabItem`
-		where name in ({0})
-		""".format(', '.join(['"' + frappe.db.escape(i, percent=False) + '"' for i in items])), as_dict=1):
-			item_details.setdefault(item.name, item)
+	if items:
+		for item in frappe.db.sql("""
+			select name, item_name, description, item_group, brand, stock_uom
+			from `tabItem`
+			where name in ({0})
+			""".format(', '.join(['"' + frappe.db.escape(i, percent=False) + '"' for i in items])), as_dict=1):
+				item_details.setdefault(item.name, item)
 
 	if filters.get('show_variant_attributes', 0) == 1:
 		variant_values = get_variant_values_for(item_details.keys())
@@ -215,11 +216,14 @@ def get_item_details(items, sle, filters):
 	return item_details
 
 def get_item_reorder_details(items):
-	item_reorder_details = frappe.db.sql("""
-		select parent, warehouse, warehouse_reorder_qty, warehouse_reorder_level
-		from `tabItem Reorder`
-		where parent in ({0})
-	""".format(', '.join(['"' + frappe.db.escape(i, percent=False) + '"' for i in items])), as_dict=1)
+	item_reorder_details = frappe._dict()
+
+	if items:
+		item_reorder_details = frappe.db.sql("""
+			select parent, warehouse, warehouse_reorder_qty, warehouse_reorder_level
+			from `tabItem Reorder`
+			where parent in ({0})
+		""".format(', '.join(['"' + frappe.db.escape(i, percent=False) + '"' for i in items])), as_dict=1)
 
 	return dict((d.parent + d.warehouse, d) for d in item_reorder_details)
 

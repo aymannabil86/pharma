@@ -104,16 +104,15 @@ class SalesInvoice(SellingController):
 		if self.is_pos and not self.is_return:
 			self.verify_payment_amount_is_positive()
 
-#		self.set_paid_amount()
 		self.check_preventive_list()
 		self.check_diagn_list()
 		self.check_inv_limit()
 
-
+	
 	def before_save(self):
     		set_account_for_mode_of_payment(self)
 
-
+    		
 
 	def on_submit(self):
 		self.validate_pos_paid_amount()
@@ -283,7 +282,7 @@ class SalesInvoice(SellingController):
 				(not sales_invoice and data.sales_invoice == self.name):
 				data.sales_invoice = sales_invoice
 
-
+	
 
 	def on_update(self):
 		self.set_paid_amount()
@@ -291,11 +290,37 @@ class SalesInvoice(SellingController):
 	def set_paid_amount(self):
     		paid_amount = 0.0
 		base_paid_amount = 0.0
-		percent = cint(frappe.db.get_value("Customer", self.customer,"customer_percentage"))
+		based_cond = cint(self.cust_based_cond)
+		percent = 0
+		fixed = 0
+
+		try:
+			if cint(based_cond) == 1:
+    				for c in self.sales_payment_conditions:
+    						cond = c.condition.strip() if c.condition else None
+						if cond:
+        								if frappe.safe_eval(cond, None, self.as_dict()):
+    										percent = cint(c.cust_payment)
+		    								fixed = cint(c.fixed_amount)
+			else:
+    				percent = cint(frappe.db.get_value("Customer", self.customer,"customer_percentage"))
+    										
+
+
+		except NameError as err:
+			frappe.throw(_("Name error: {0}".format(err)))
+		except SyntaxError as err:
+			frappe.throw(_("Syntax error in condition: {0}".format(err)))
+		except Exception as e:
+			frappe.throw(_("Error in condition: {0}".format(e)))
+			raise
+
+
+#		percent = cint(frappe.db.get_value("Customer", self.customer,"customer_percentage"))
 		before_discount = cint(frappe.db.get_value("Customer", self.customer,"cust_percent_before_discount"))
 		perc_applied = self.cust_percent_applied
 
-		if cint(percent) > 0 and cint(before_discount) == 0 and cint(perc_applied) == 0:
+		if cint(percent) > 0 and cint(before_discount) == 0 and cint(perc_applied) == 0 and cint(fixed) == 0:
     			for data in self.payments:
     					data.base_amount = flt((flt(data.amount*self.conversion_rate, self.precision("base_paid_amount"))*percent)/100)
 					data.amount = flt((data.amount * percent)/100)
@@ -305,7 +330,7 @@ class SalesInvoice(SellingController):
 			self.paid_amount = paid_amount
 			self.base_paid_amount = base_paid_amount
 			self.cust_percent_applied = 1
-		elif cint(percent) > 0 and cint(before_discount) == 1 and cint(perc_applied) == 0:
+		elif cint(percent) > 0 and cint(before_discount) == 1 and cint(perc_applied) == 0 and cint(fixed) == 0:
     			for data in self.payments:
     					data.base_amount = flt((flt(self.total_before_discount*self.conversion_rate, self.precision("base_paid_amount"))*percent)/100)
 					data.amount = flt((self.total_before_discount * percent)/100)
@@ -315,6 +340,26 @@ class SalesInvoice(SellingController):
 			self.paid_amount = paid_amount
 			self.base_paid_amount = base_paid_amount
 			self.cust_percent_applied = 1
+		elif cint(percent) > 0 and cint(before_discount) == 0 and cint(perc_applied) == 0 and cint(fixed) == 1:
+    			for data in self.payments:
+        				data.base_amount = flt((flt(data.amount*self.conversion_rate, self.precision("base_paid_amount"))-percent))
+					data.amount = flt(data.amount - percent)
+					paid_amount += data.amount
+					base_paid_amount += data.base_amount
+
+			self.paid_amount = paid_amount
+			self.base_paid_amount = base_paid_amount
+			self.cust_percent_applied = 1
+		elif cint(percent) > 0 and cint(before_discount) == 1 and cint(perc_applied) == 0 and cint(fixed) == 1:
+    			for data in self.payments:
+        				data.base_amount = flt((flt(self.total_before_discount*self.conversion_rate, self.precision("base_paid_amount"))-percent))
+					data.amount = flt(self.total_before_discount - percent)
+					paid_amount += data.amount
+					base_paid_amount += data.base_amount
+
+			self.paid_amount = paid_amount
+			self.base_paid_amount = base_paid_amount
+			self.cust_percent_applied = 1			    			
 		else:
         		for data in self.payments:
             			data.base_amount = flt(data.amount*self.conversion_rate, self.precision("base_paid_amount"))
@@ -322,13 +367,13 @@ class SalesInvoice(SellingController):
         			base_paid_amount += data.base_amount
 
     		self.paid_amount = paid_amount
-    		self.base_paid_amount = base_paid_amount
-
-
+    		self.base_paid_amount = base_paid_amount   			
+		
+    					
 
 	def check_preventive_list(self):
     		from erpnext.setup.doctype.customer_group.customer_group import check_preventive_list
-
+    			
        		items = []
 		for item in self.get("items"):
     				items.append(item.item_code)
@@ -340,12 +385,12 @@ class SalesInvoice(SellingController):
 
 	def check_diagn_list(self):
     		from erpnext.setup.doctype.customer_group.customer_group import check_diagn_list
-
+    			
        		diagn = self.pres_diagn
 	    	parentgroup = frappe.db.get_value("Customer", self.customer, "parent_customer_group")
 		acceptance = self.diagn_acceptance
 		check_diagn_list(parentgroup, diagn, acceptance)
-
+    
 	def check_inv_limit(self):
     		invoice_limit = cint(frappe.db.get_value("Customer", self.customer,"invoice_limit"))
 		after_percent = cint(frappe.db.get_value("Customer", self.customer,"inv_limit_after_percent"))
@@ -355,7 +400,7 @@ class SalesInvoice(SellingController):
     			frappe.throw(_("You Passe The Limit Please Insert Your Amount Acceptance Code"))
 
 
-
+    		
 
 	def validate_time_sheets_are_submitted(self):
 		for data in self.timesheets:
@@ -414,8 +459,8 @@ class SalesInvoice(SellingController):
 				self.terms = frappe.db.get_value("Terms and Conditions", self.tc_name, "terms")
 
 			# fetch charges
-			if self.taxes_and_charges and not len(self.get("taxes")):
-				self.set_taxes()
+			if self.taxes_and_charges:
+				self.set_other_charges()
 
 		return pos
 
@@ -1060,3 +1105,4 @@ def set_account_for_mode_of_payment(self):
 	for data in self.payments:
 		if not data.account:
 			data.account = get_bank_cash_account(data.mode_of_payment, self.company).get("account")
+
