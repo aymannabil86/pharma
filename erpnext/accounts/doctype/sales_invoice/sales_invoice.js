@@ -25,7 +25,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 	onload: function() {
 		var me = this;
 		this._super();
-
+        
 		if(!this.frm.doc.__islocal && !this.frm.doc.customer && this.frm.doc.debit_to) {
 			// show debit_to in print format
 			this.frm.set_df_property("debit_to", "print_hide", 0);
@@ -110,7 +110,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 
 		this.set_default_print_format();
 	},
-
+    
 	scan: function(doc) {
 		var me = this;
 		var changed = false;
@@ -121,19 +121,19 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
     	for (var i=0, l=(this.frm.doc.items || []).length; i<l; i++){
     		var row = this.frm.doc.items[i];
     		if (row.barcode == null) {
-    			frappe.model.set_value(row.doctype, row.name, "barcode", bari, "Link");
+				frappe.model.set_value(row.doctype, row.name, "barcode", bari, "Link");
     			changed = true;
-    			bars.push(row.barcode);
+				bars.push(row.barcode);
     		}else if (row.barcode == bari ){
     			quant = row.qty+1;
     			frappe.model.set_value(row.doctype, row.name, "qty", quant, "data");
-    			changed = true;
+				changed = true;
     		}else if (!(bars.includes(bari))){
     			cur_frm.add_child("items");
     			var row = this.frm.doc.items[l];
     			frappe.model.set_value(row.doctype, row.name, "barcode", bari, "Link");
     			changed = true;
-    			bars.push(row.barcode);
+				bars.push(row.barcode);
     		}
     	}
 
@@ -158,7 +158,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 			this.frm.doc.total_before_discount = tbdisc;
 		}
 	},
-
+	
 	on_submit: function(doc, dt, dn) {
 
 
@@ -271,9 +271,25 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 		this.get_terms();
 	},
 
-	customer: function() {
+	customer: function(frm) {
 		var me = this;
 		this.check_cust_allow();
+
+		var based_cond = parseInt(me.frm.doc.cust_based_cond);
+		if (based_cond == 1){
+			frappe.model.with_doc("Customer", me.frm.doc.customer, function() {
+				var tabletransfer= frappe.model.get_doc("Customer", me.frm.doc.customer)
+				$.each(tabletransfer.conditions, function(index, row){
+					d = me.frm.add_child("sales_payment_conditions");
+					d.condition = row.condition;
+					d.fixed_amount = row.fixed_amount;
+					d.cust_payment = row.cust_payment;
+					me.frm.refresh_field("sales_payment_conditions");
+				});
+			});
+        }
+
+
 		if(this.frm.updating_party_details) return;
 
 		erpnext.utils.get_party_details(this.frm,
@@ -287,7 +303,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 				me.apply_pricing_rule();
 			})
 
-
+		
 	},
 
 	prescription_date:function(){
@@ -301,7 +317,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 			if (parseInt(custdiff) < parseInt(this.frm.doc.cust_days)){
 				frappe.throw(__("This Customer Validation Period Less Than The Allowed Days And Can Not Creat Any Invoices, Please Insert Customer Acceptance Code"));
 			}
-		}
+		}		
 	},
 
 	check_pres_allow: function(){
@@ -310,7 +326,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 		if (!this.frm.doc.pres_acceptance){
 			if (parseInt(presdiff) > parseInt(this.frm.doc.pres_days) || parseInt(presdiff) < 0){
 				frappe.throw(__("This Prescription Validation Period Less Than The Allowed Days And Can Not Creat Any Invoices, Please Insert Prescription Acceptance Code"));
-			}
+			}	
 		}
 	},
 
@@ -716,3 +732,4 @@ var calculate_total_billing_amount =  function(frm) {
 
 	refresh_field('total_billing_amount')
 }
+

@@ -78,4 +78,20 @@ frappe.ui.form.on("Customer", {
 	validate: function(frm) {
 		if(frm.doc.lead_name) frappe.model.clear_doc("Lead", frm.doc.lead_name);
 	},
+	customer_group: function(frm){
+		based_cond = parseInt(frm.doc.cust_based_cond);
+		if (based_cond == 1){
+			frappe.model.with_doc("Customer Group", frm.doc.customer_group, function() {
+				var tabletransfer= frappe.model.get_doc("Customer Group", frm.doc.customer_group)
+				$.each(tabletransfer.conditions, function(index, row){
+					d = frm.add_child("conditions");
+					d.condition = row.condition;
+					d.fixed_amount = row.fixed_amount;
+					d.cust_payment = row.cust_payment;
+					frm.refresh_field("conditions");
+				});
+			});
+        }
+
+	}
 });
