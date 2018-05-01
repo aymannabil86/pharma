@@ -200,7 +200,6 @@ def get_item_details(items, sle, filters):
 	item_details = {}
 	if not items:
 		items = list(set([d.item_code for d in sle]))
-
 	if items:
 		for item in frappe.db.sql("""
 			select name, item_name, description, item_group, brand, stock_uom
