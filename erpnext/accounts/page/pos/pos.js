@@ -1577,25 +1577,11 @@ erpnext.pos.PointOfSale = erpnext.taxes_and_totals.extend({
 	},
 
 	submit_invoice: function () {
-		
-		
-        var customer = this.frm.doc.customer;
-        var total = cint(this.frm.doc.grand_total);
-		var invoice_limit = cint(frappe.db.get_value("Customer", {customer_name: customer}, "invoice_limit"))
-		window.confirm ( invoice_limit );
-		window.confirm ( total );
-		window.confirm ( customer );
-		
-		if (invoice_limit < total) {
-			frappe.throw(__("Invoice Limit Has Been Passed"));
-
-		}
-
-		
-	    this.change_status();
-	    this.update_serial_no()
-	    if (this.frm.doc.docstatus == 1) {
-	    	this.print_dialog()
+		var me = this;
+		this.change_status();
+		this.update_serial_no()
+		if (this.frm.doc.docstatus == 1) {
+			this.print_dialog()
 		}
 	},
 

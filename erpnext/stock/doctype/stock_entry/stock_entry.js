@@ -100,6 +100,20 @@ frappe.ui.form.on('Stock Entry', {
 					}
 				})
 			}, __("Get items from"));
+			frm.add_custom_button(__('Material Request'), function() {
+				erpnext.utils.map_current_doc({
+					method: "erpnext.stock.doctype.material_request.material_request.make_stock_entry",
+					source_doctype: "Material Request",
+					target: frm,
+					setters: {
+						company: frm.doc.company || undefined,
+					},
+					get_query_filters: {
+						status: "Pending",
+						material_request_type: "Material Transfer"
+					}
+				})
+			}, __("Get items from"));			
 		}
 
 		if(frm.doc.company) {
