@@ -62,7 +62,6 @@ class Appraisal(Document):
 		frappe.db.set(self, 'status', 'Submitted')
 		frappe.db.set_value("Employee", self.employee, "appraisal", self.total_score)
 
-
 	def on_cancel(self):
 		frappe.db.set(self, 'status', 'Cancelled')
 
