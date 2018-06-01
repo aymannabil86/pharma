@@ -110,7 +110,7 @@ def get_achieved_details(filters, sales_person, all_sales_persons, target_item_g
 		group by
 			sales_person, month_name
 			""",
-		(start_date, end_date, all_sales_persons[sales_person].lft, all_sales_persons[sales_person].rgt, 
+		(start_date, end_date, all_sales_persons[sales_person].lft, all_sales_persons[sales_person].rgt,
 			item_groups[target_item_group].lft, item_groups[target_item_group].rgt), as_dict=1)
 
 	actual_details = {}
@@ -174,5 +174,4 @@ def get_sales_persons():
 			"lft": d.lft,
 			"rgt": d.rgt
 		}))
-	return sales_persons	
-	
+	return sales_persons
