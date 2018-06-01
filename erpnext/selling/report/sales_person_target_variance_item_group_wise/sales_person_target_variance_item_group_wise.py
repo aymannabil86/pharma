@@ -98,7 +98,7 @@ def get_achieved_details(filters, sales_person, all_sales_persons, target_item_g
 		END as qty,
 		CASE
 			WHEN so.status = "Closed" THEN sum(soi.delivered_qty * soi.conversion_factor * soi.base_net_rate * (st.allocated_percentage/100))
-			ELSE soi.base_net_amount * (st.allocated_percentage/100))
+			ELSE sum(soi.base_net_amount * (st.allocated_percentage/100))
 		END as amount
 		from
 			`tabSales Order Item` soi, `tabSales Order` so, `tabSales Team` st
@@ -110,7 +110,7 @@ def get_achieved_details(filters, sales_person, all_sales_persons, target_item_g
 		group by
 			sales_person, month_name
 			""",
-		(start_date, end_date, all_sales_persons[sales_person].lft, all_sales_persons[sales_person].rgt, 
+		(start_date, end_date, all_sales_persons[sales_person].lft, all_sales_persons[sales_person].rgt,
 			item_groups[target_item_group].lft, item_groups[target_item_group].rgt), as_dict=1)
 
 	actual_details = {}
@@ -174,5 +174,4 @@ def get_sales_persons():
 			"lft": d.lft,
 			"rgt": d.rgt
 		}))
-	return sales_persons	
-	
+	return sales_persons
