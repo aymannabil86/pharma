@@ -190,14 +190,22 @@ def get_data():
 					"type": "doctype",
 					"name": "Item Attribute",
 				},
-                                {
-                                        "type": "doctype",
-                                        "name": "Barcode Printer",
-                                },
-                                {
-                                        "type": "doctype",
-                                        "name": "Diagnosis Table",
-                                },
+                {
+                    "type": "doctype",
+                    "name": "Barcode Printer",
+                },
+                {
+                    "type": "doctype",
+                    "name": "Diagnosis Table",
+                },
+                {
+                    "type": "doctype",
+                    "name": "Formulation Type",
+                },
+                {
+                    "type": "doctype",
+                    "name": "Therapeutic Usage",
+                },
 				{
 					"type": "doctype",
 					"name": "Brand",

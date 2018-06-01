@@ -271,19 +271,20 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 		this.get_terms();
 	},
 
-	customer: function(frm) {
+	customer_group: function(frm) {
+		cur_frm.add_fetch("customer_group", "cust_based_cond", "cust_based_cond");
 		var me = this;
 		this.check_cust_allow();
-
 		var based_cond = parseInt(me.frm.doc.cust_based_cond);
 		if (based_cond == 1){
-			frappe.model.with_doc("Customer", me.frm.doc.customer, function() {
-				var tabletransfer= frappe.model.get_doc("Customer", me.frm.doc.customer)
+			frappe.model.with_doc("Customer Group", me.frm.doc.customer_group, function() {
+				var tabletransfer= frappe.model.get_doc("Customer Group", me.frm.doc.customer_group)
 				$.each(tabletransfer.conditions, function(index, row){
 					d = me.frm.add_child("sales_payment_conditions");
 					d.condition = row.condition;
 					d.fixed_amount = row.fixed_amount;
 					d.cust_payment = row.cust_payment;
+					d.formula = row.formula;
 					me.frm.refresh_field("sales_payment_conditions");
 				});
 			});

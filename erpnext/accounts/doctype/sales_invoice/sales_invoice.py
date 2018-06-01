@@ -302,22 +302,26 @@ class SalesInvoice(SellingController):
         								if frappe.safe_eval(cond, None, self.as_dict()):
     										percent = cint(c.cust_payment)
 		    								fixed = cint(c.fixed_amount)
-			else:
-    				percent = cint(frappe.db.get_value("Customer", self.customer,"customer_percentage"))
+    										formulation = c.formula.strip() if c.formula else None
+										if formulation:
+    											percent = cint(frappe.safe_eval(formulation, None, self.as_dict()))
+											fixed = 1
+			elif cint(based_cond) == 0:
+    				percent = cint(frappe.db.get_value("Customer Group", self.customer_group,"customer_percentage"))
     										
 
 
 		except NameError as err:
 			frappe.throw(_("Name error: {0}".format(err)))
 		except SyntaxError as err:
-			frappe.throw(_("Syntax error in condition: {0}".format(err)))
+			frappe.throw(_("Syntax error in condition or formula: {0}".format(err)))
 		except Exception as e:
-			frappe.throw(_("Error in condition: {0}".format(e)))
+			frappe.throw(_("Error in condition or formula: {0}".format(e)))
 			raise
 
 
 #		percent = cint(frappe.db.get_value("Customer", self.customer,"customer_percentage"))
-		before_discount = cint(frappe.db.get_value("Customer", self.customer,"cust_percent_before_discount"))
+		before_discount = cint(frappe.db.get_value("Customer Group", self.customer_group,"cust_percent_before_discount"))
 		perc_applied = self.cust_percent_applied
 
 		if cint(percent) > 0 and cint(before_discount) == 0 and cint(perc_applied) == 0 and cint(fixed) == 0:
@@ -342,8 +346,8 @@ class SalesInvoice(SellingController):
 			self.cust_percent_applied = 1
 		elif cint(percent) > 0 and cint(before_discount) == 0 and cint(perc_applied) == 0 and cint(fixed) == 1:
     			for data in self.payments:
-        				data.base_amount = flt((flt(data.amount*self.conversion_rate, self.precision("base_paid_amount"))-percent))
-					data.amount = flt(data.amount - percent)
+        				data.base_amount = flt((flt(data.amount*self.conversion_rate, self.precision("base_paid_amount"))-(flt(data.amount*self.conversion_rate, self.precision("base_paid_amount"))-percent)))
+					data.amount = flt(flt(data.amount)-(flt(data.amount) - flt(percent)))
 					paid_amount += data.amount
 					base_paid_amount += data.base_amount
 
@@ -352,8 +356,8 @@ class SalesInvoice(SellingController):
 			self.cust_percent_applied = 1
 		elif cint(percent) > 0 and cint(before_discount) == 1 and cint(perc_applied) == 0 and cint(fixed) == 1:
     			for data in self.payments:
-        				data.base_amount = flt((flt(self.total_before_discount*self.conversion_rate, self.precision("base_paid_amount"))-percent))
-					data.amount = flt(self.total_before_discount - percent)
+        				data.base_amount = flt((flt(self.total_before_discount*self.conversion_rate, self.precision("base_paid_amount"))-(flt(self.total_before_discount*self.conversion_rate, self.precision("base_paid_amount"))-percent)))
+					data.amount = flt(flt(self.total_before_discount)-(flt(self.total_before_discount) - flt(percent)))
 					paid_amount += data.amount
 					base_paid_amount += data.base_amount
 
@@ -392,8 +396,8 @@ class SalesInvoice(SellingController):
 		check_diagn_list(parentgroup, diagn, acceptance)
     
 	def check_inv_limit(self):
-    		invoice_limit = cint(frappe.db.get_value("Customer", self.customer,"invoice_limit"))
-		after_percent = cint(frappe.db.get_value("Customer", self.customer,"inv_limit_after_percent"))
+    		invoice_limit = cint(frappe.db.get_value("Customer Group", self.customer_group,"invoice_limit"))
+		after_percent = cint(frappe.db.get_value("Customer Group", self.customer_group,"inv_limit_after_percent"))
 		if invoice_limit < self.grand_total and not self.acceptance_code and invoice_limit > 0 and after_percent == 0:
         		frappe.throw(_("You Passe The Limit Please Insert Your Amount Acceptance Code"))
 		elif invoice_limit < self.outstanding_amount and not self.acceptance_code and invoice_limit > 0 and after_percent == 1:
