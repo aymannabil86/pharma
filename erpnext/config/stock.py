@@ -206,6 +206,10 @@ def get_data():
                     "type": "doctype",
                     "name": "Therapeutic Usage",
                 },
+	            {
+                    "type": "doctype",
+                    "name": "Scientific Type",
+                },
 				{
 					"type": "doctype",
 					"name": "Brand",
