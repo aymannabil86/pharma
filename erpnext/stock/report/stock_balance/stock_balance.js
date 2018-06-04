@@ -27,6 +27,30 @@ frappe.query_reports["Stock Balance"] = {
 			"options": "Item Group"
 		},
 		{
+			"fieldname":"brand",
+			"label": __("Brand"),
+			"fieldtype": "Link",
+			"options": "Brand"
+		},
+		{
+			"fieldname":"therapeutic_usage",
+			"label": __("Therapeutic Usage"),
+			"fieldtype": "Link",
+			"options": "Therapeutic Usage"
+		},
+		{
+			"fieldname":"formulation_type",
+			"label": __("Formulation Type"),
+			"fieldtype": "Link",
+			"options": "Formulation Type"
+		},
+		{
+			"fieldname":"scientific_type",
+			"label": __("Scientific Type"),
+			"fieldtype": "Link",
+			"options": "Scientific Type"
+		},		
+		{
 			"fieldname": "item_code",
 			"label": __("Item"),
 			"fieldtype": "Link",

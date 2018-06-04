@@ -31,6 +31,9 @@ def execute(filters=None):
 		report_data = [item, item_map[item]["item_name"],
 			item_map[item]["item_group"],
 			item_map[item]["brand"],
+			item_map[item]["therapeutic_usage"],
+			item_map[item]["formulation_type"],
+			item_map[item]["scientific_type"],			
 			item_map[item]["description"], warehouse,
 			item_map[item]["stock_uom"], qty_dict.opening_qty,
 			qty_dict.opening_val, qty_dict.in_qty,
@@ -61,6 +64,9 @@ def get_columns():
 		_("Item Name")+"::150",
 		_("Item Group")+":Link/Item Group:100",
 		_("Brand")+":Link/Brand:90",
+		_("Therapeutic Usage")+":Link/Therapeutic Usage:90",
+		_("Formulation Type")+":Link/Formulation Type:90",
+		_("Scientific Type")+":Link/Scientific Type:90",		
 		_("Description")+"::140",
 		_("Warehouse")+":Link/Warehouse:100",
 		_("Stock UOM")+":Link/UOM:90",
@@ -187,6 +193,12 @@ def get_items(filters):
 	else:
 		if filters.get("brand"):
 			conditions.append("item.brand=%(brand)s")
+		if filters.get("therapeutic_usage"):
+    			conditions.append("item.therapeutic_usage=%(therapeutic_usage)s")
+		if filters.get("formulation_type"):
+    			conditions.append("item.formulation_type=%(formulation_type)s")
+		if filters.get("scientific_type"):
+    			conditions.append("item.scientific_type=%(scientific_type)s")			
 		if filters.get("item_group"):
 			conditions.append(get_item_group_condition(filters.get("item_group")))
 
@@ -203,7 +215,7 @@ def get_item_details(items, sle, filters):
 		
 	if items:
 		for item in frappe.db.sql("""
-			select name, item_name, description, item_group, brand, stock_uom
+			select name, item_name, description, item_group, brand, therapeutic_usage, formulation_type, scientific_type, stock_uom
 			from `tabItem`
 			where name in ({0})
 			""".format(', '.join(['"' + frappe.db.escape(i, percent=False) + '"' for i in items])), as_dict=1):
