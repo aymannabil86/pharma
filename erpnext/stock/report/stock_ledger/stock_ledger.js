@@ -61,6 +61,24 @@ frappe.query_reports["Stock Ledger"] = {
 			"options": "Brand"
 		},
 		{
+			"fieldname":"therapeutic_usage",
+			"label": __("Therapeutic Usage"),
+			"fieldtype": "Link",
+			"options": "Therapeutic Usage"
+		},
+		{
+			"fieldname":"formulation_type",
+			"label": __("Formulation Type"),
+			"fieldtype": "Link",
+			"options": "Formulation Type"
+		},
+		{
+			"fieldname":"scientific_type",
+			"label": __("Scientific Type"),
+			"fieldtype": "Link",
+			"options": "Scientific Type"
+		},
+		{
 			"fieldname":"voucher_no",
 			"label": __("Voucher #"),
 			"fieldtype": "Data"

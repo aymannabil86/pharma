@@ -20,7 +20,7 @@ def execute(filters=None):
 		item_detail = item_details[sle.item_code]
 
 		data.append([sle.date, sle.item_code, item_detail.item_name, item_detail.item_group,
-			item_detail.brand, item_detail.description, sle.warehouse,
+			item_detail.brand, item_detail.therapeutic_usage, item_detail.formulation_type, item_detail.scientific_type, item_detail.description, sle.warehouse,
 			item_detail.stock_uom, sle.actual_qty, sle.qty_after_transaction,
 			(sle.incoming_rate if sle.actual_qty > 0 else 0.0),
 			sle.valuation_rate, sle.stock_value, sle.voucher_type, sle.voucher_no,
@@ -32,7 +32,9 @@ def get_columns():
 	columns = [
 		_("Date") + ":Datetime:95", _("Item") + ":Link/Item:130",
 		_("Item Name") + "::100", _("Item Group") + ":Link/Item Group:100",
-		_("Brand") + ":Link/Brand:100", _("Description") + "::200",
+		_("Brand") + ":Link/Brand:100", _("Therapeutic Usage") + ":Link/Therapeutic Usage:100",
+		_("Formulation Type") + ":Link/Formulation Type:100", _("Scientific Type") + ":Link/Scientific Type:100",
+		_("Description") + "::200",
 		_("Warehouse") + ":Link/Warehouse:100", _("Stock UOM") + ":Link/UOM:100",
 		_("Qty") + ":Float:50", _("Balance Qty") + ":Float:100",
 		{"label": _("Incoming Rate"), "fieldtype": "Currency", "width": 110,
@@ -79,6 +81,12 @@ def get_items(filters):
 	else:
 		if filters.get("brand"):
 			conditions.append("item.brand=%(brand)s")
+		if filters.get("therapeutic_usage"):
+    			conditions.append("item.therapeutic_usage=%(therapeutic_usage)s")
+		if filters.get("formulation_type"):
+    			conditions.append("item.formulation_type=%(formulation_type)s")
+		if filters.get("scientific_type"):
+    			conditions.append("item.scientific_type=%(scientific_type)s")
 		if filters.get("item_group"):
 			conditions.append(get_item_group_condition(filters.get("item_group")))
 
@@ -97,7 +105,7 @@ def get_item_details(items, sl_entries):
 		return item_details
 
 	for item in frappe.db.sql("""
-		select name, item_name, description, item_group, brand, stock_uom
+		select name, item_name, description, item_group, brand, therapeutic_usage, formulation_type, scientific_type, stock_uom
 		from `tabItem`
 		where name in ({0})
 		""".format(', '.join(['"' + frappe.db.escape(i,percent=False) + '"' for i in items])), as_dict=1):
