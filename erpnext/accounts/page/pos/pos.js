@@ -298,6 +298,7 @@ erpnext.pos.PointOfSale = erpnext.taxes_and_totals.extend({
 		this.meta = r.message.meta;
 		this.item_data = r.message.items;
 		this.item_groups = r.message.item_groups;
+		this.sales_partners = r.message.sales_partners;
 		this.customers = r.message.customers;
 		this.serial_no_data = r.message.serial_no_data;
 		this.batch_no_data = r.message.batch_no_data;
@@ -397,10 +398,53 @@ erpnext.pos.PointOfSale = erpnext.taxes_and_totals.extend({
 		this.frm.doc["allow_user_to_edit_discount"] = this.pos_profile_data["allow_user_to_edit_discount"] ? true : false;
 		this.wrapper.html(frappe.render_template("pos", this.frm.doc));
 		this.make_search();
+		this.make_seller();
 		this.make_customer();
 		this.make_list_customers();
 		this.bind_numeric_keypad();
 	},
+
+    make_seller: function(){
+		var me = this;
+		this.search_seller = frappe.ui.form.make_control({
+			df: {
+				"fieldtype": "Link",
+				"options": "Sales Partner",
+				"label": "Seller",
+				"fieldname": "Seller",
+				"placeholder": __("Select Seller")
+			},
+			parent: this.wrapper.find(".select-seller"),
+///			only_input: true,
+
+		});
+///		this.select_seller.make_input();
+///	    this.select_seller.$input.val(this.frm.doc.customer);
+		this.search_seller = this.wrapper.find('.select-seller');
+		sorted_sellers = this.get_sorted_sellers()
+///		frappe.throw(__(sorted_sellers))
+
+		var dropdown_html = sorted_sellers.map(function(sales_partner) {
+			return "<li><a class='option' data-value='"+sales_partner+"'>"+sales_partner+"</a></li>";
+		}).join("");
+		this.search_seller.find('.dropdown-menu').html(dropdown_html);
+		this.search_seller.on('click', '.dropdown-menu a', function() {
+			me.selected_seller = $(this).attr('data-value');
+			me.search_seller.find('.dropdown-text').text(me.selected_seller);
+
+		})
+
+
+	},
+	get_sorted_sellers: function() {
+		list = {}
+		$.each(this.sales_partners, function(i, data) {
+			list[i] = data[0]
+		})
+
+		return Object.keys(list).sort(function(a,b){return list[a]-list[b]})
+	},
+    
 
 	make_search: function () {
 		var me = this;
@@ -1643,6 +1687,8 @@ erpnext.pos.PointOfSale = erpnext.taxes_and_totals.extend({
 			this.frm.doc.posting_date = frappe.datetime.get_today();
 			this.frm.doc.posting_time = frappe.datetime.now_time();
 			this.frm.doc.pos_profile = this.pos_profile_data['name'];
+			this.frm.doc.sales_partner = me.selected_seller;
+///			frappe.throw(__(this.frm.doc.sales_partner));
 			invoice_data[this.frm.doc.offline_pos_name] = this.frm.doc;
 			this.si_docs.push(invoice_data);
 			this.update_localstorage();
