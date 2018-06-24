@@ -31,12 +31,14 @@ def get_pos_data():
 	default_print_format = pos_profile.get('print_format') or "Point of Sale"
 	print_template = frappe.db.get_value('Print Format', default_print_format, 'html')
 	customers = get_customers_list(pos_profile)
-
+	sellers = get_sellers()
+#	frappe.throw(_("{0}").format(sellers))
 	return {
 		'doc': doc,
 		'default_customer': pos_profile.get('customer'),
 		'items': get_items_list(pos_profile),
 		'item_groups': get_item_groups(pos_profile),
+		'sales_partners':sellers,
 		'customers': customers,
 		'address': get_customers_address(customers),
 		'contacts': get_contacts(customers),
@@ -160,6 +162,13 @@ def get_item_groups(pos_profile):
 	for data in item_groups:
 		item_group_dict[data.name] = [data.lft, data.rgt]
 	return item_group_dict
+
+def get_sellers():
+    	sales_partners={}
+    	sales_partnersl = frappe.db.sql(""" select name, partner_name from `tabSales Partner` """, as_dict=1) or {}
+	for data in sales_partnersl:
+    		sales_partners[data.name] = [data.partner_name]	
+	return sales_partners
 
 def get_customers_list(pos_profile={}):
 	cond = "1=1"
@@ -302,6 +311,7 @@ def get_pricing_rule_data(doc):
 
 @frappe.whitelist()
 def make_invoice(doc_list={}, email_queue_list={}, customers_list={}):
+#    	frappe.throw(_("{0}").format(doc_list))
 	if isinstance(doc_list, basestring):
 		doc_list = json.loads(doc_list)
 
@@ -321,6 +331,7 @@ def make_invoice(doc_list={}, email_queue_list={}, customers_list={}):
 				si_doc.offline_pos_name = name
 				si_doc.update(doc)
 				si_doc.set_posting_time = 1
+				si_doc.commission_rate = get_commision(doc)
 				si_doc.customer = get_customer_id(doc)
 				si_doc.due_date = doc.get('posting_date')
 				name_list = submit_invoice(si_doc, name, doc, name_list)
@@ -355,6 +366,16 @@ def get_customer_id(doc, customer=None):
 			cust_id = add_customer(doc)
 
 	return cust_id
+
+def get_commision(doc, commission_rate=None):
+    	rate = None
+	if doc.get('sales_partner'):
+    			rate = frappe.db.get_value('Sales Partner',doc.get('sales_partner'), 'commission_rate')
+	else:
+    			return 1
+#	frappe.throw(_({"0"}).format(rate))
+  
+	return rate
 
 def make_customer_and_address(customers):
 	customers_list = []
@@ -500,6 +521,7 @@ def save_invoice(doc, name, name_list):
 			si.update(doc)
 			si.set_posting_time = 1
 			si.customer = get_customer_id(doc)
+#			si.commission_rate = get_commision(doc)
 			si.due_date = doc.get('posting_date')
 			si.flags.ignore_mandatory = True
 			si.insert(ignore_permissions=True)
