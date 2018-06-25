@@ -31,7 +31,7 @@ def get_pos_data():
 	default_print_format = pos_profile.get('print_format') or "Point of Sale"
 	print_template = frappe.db.get_value('Print Format', default_print_format, 'html')
 	customers = get_customers_list(pos_profile)
-	sellers = get_sellers()
+	sellers = get_sellers(pos_profile)
 #	frappe.throw(_("{0}").format(sellers))
 	return {
 		'doc': doc,
@@ -143,10 +143,10 @@ def get_items_list(pos_profile):
 			item_groups.extend([d.name for d in get_child_nodes('Item Group', d.item_group)])
 		cond = "item_group in (%s)"%(', '.join(['%s']*len(item_groups)))
 
-	return frappe.db.sql(""" 
+	return frappe.db.sql("""
 		select
 			name, item_code, item_name, description, item_group, expense_account, has_batch_no,
-			has_serial_no, expense_account, selling_cost_center, stock_uom, image, 
+			has_serial_no, expense_account, selling_cost_center, stock_uom, image,
 			default_warehouse, is_stock_item, barcode, brand
 		from
 			tabItem
@@ -163,11 +163,13 @@ def get_item_groups(pos_profile):
 		item_group_dict[data.name] = [data.lft, data.rgt]
 	return item_group_dict
 
-def get_sellers():
+def get_sellers(pos_profile):
     	sales_partners={}
-    	sales_partnersl = frappe.db.sql(""" select name, partner_name from `tabSales Partner` """, as_dict=1) or {}
+	terri = pos_profile.territory
+#	frappe.throw(_("{0}").format(terri))
+    	sales_partnersl = frappe.db.sql(""" select name, partner_name from `tabSales Partner` where territory = %s """, terri, as_dict=1) or {}
 	for data in sales_partnersl:
-    		sales_partners[data.name] = [data.partner_name]	
+    		sales_partners[data.name] = [data.partner_name]
 	return sales_partners
 
 def get_customers_list(pos_profile={}):
@@ -207,11 +209,11 @@ def get_contacts(customers):
 		customers = [frappe._dict({'name': customers})]
 
 	for data in customers:
-		contact = frappe.db.sql(""" select email_id, phone, mobile_no from `tabContact` 
+		contact = frappe.db.sql(""" select email_id, phone, mobile_no from `tabContact`
 			where is_primary_contact =1 and name in
 			(select parent from `tabDynamic Link` where link_doctype = 'Customer' and link_name = %s
 			and parenttype = 'Contact')""", data.name, as_dict=1)
-		if contact: 
+		if contact:
 			customer_contact[data.name] = contact[0]
 
 	return customer_contact
@@ -374,7 +376,7 @@ def get_commision(doc, commission_rate=None):
 	else:
     			return 1
 #	frappe.throw(_({"0"}).format(rate))
-  
+
 	return rate
 
 def make_customer_and_address(customers):
@@ -446,7 +448,7 @@ def make_contact(args,customer):
 
 def make_address(args, customer):
 	if not args.get('address_line1'): return
-	
+
 	name = args.get('name')
 
 	if not name:
