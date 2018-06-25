@@ -159,6 +159,38 @@ erpnext.accounts.SalesInvoiceController = erpnext.selling.SellingController.exte
 		}
 	},
 	
+	scan: function(doc) {
+		var me = this;
+		var changed = false;
+		bar = String(doc.scan);
+		nbar = bar.split("-");
+		bari = nbar[0];
+
+    	for (var i=0, l=(this.frm.doc.items || []).length; i<l; i++){
+    		var row = this.frm.doc.items[i];
+    		if (row.barcode == null) {
+				frappe.model.set_value(row.doctype, row.name, "barcode", bari, "Link");
+    			changed = true;
+				bars.push(row.barcode);
+    		}else if (row.barcode == bari ){
+    			quant = row.qty+1;
+    			frappe.model.set_value(row.doctype, row.name, "qty", quant, "data");
+				changed = true;
+    		}else if (!(bars.includes(bari))){
+    			cur_frm.add_child("items");
+    			var row = this.frm.doc.items[l];
+    			frappe.model.set_value(row.doctype, row.name, "barcode", bari, "Link");
+    			changed = true;
+				bars.push(row.barcode);
+    		}
+    	}
+
+
+		doc.scan = "";
+		refresh_field("scan");
+	},
+
+
 	on_submit: function(doc, dt, dn) {
 
 
